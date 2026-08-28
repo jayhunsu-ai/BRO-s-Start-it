@@ -1,0 +1,41 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+db.sqlite3
+staticfiles/
+media/
+celerybeat-schedule
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# --- Rust / Tauri ---
+target/
+Cargo.lock
+*.pdb
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Misc ---
+*.log
+.cache/
+coverage/

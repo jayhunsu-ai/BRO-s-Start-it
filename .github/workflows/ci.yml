@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  placeholder:
+    name: Placeholder (no app code yet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No-op until services exist
+        run: echo "CI skeleton in place — lint/test jobs will be added per-service as code lands."
