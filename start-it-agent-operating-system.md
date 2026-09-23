@@ -433,3 +433,20 @@ Before feature implementation:
 - establish agent prompts and verification rules
 - establish the foot-soldier execution pool
 - then begin the first executable foundation batch
+
+
+## 19. Agent OS Control Plane
+
+The detailed Agent OS specifications are split into explicit control-plane documents:
+
+- `AGENT_OS_ARCHITECTURE.md` — component boundaries, state machine, Blocks adapter boundary, invariants.
+- `AGENT_OS_BRAIN_AND_POLICY.md` — decision loop, authority hierarchy, policy precedence, stop conditions.
+- `AGENT_OS_COST_AND_BUDGET.md` — hard budget controls, reservations, cache economics, retry limits, circuit breakers, spend ledger.
+- `AGENT_OS_SECURITY_AND_PERMISSIONS.md` — least privilege, project isolation, environment tiers, tool authorization, fail-closed rules.
+- `AGENT_OS_CONTEXT_AND_CACHE.md` — context layers, cache-safe prefixes, freshness, minimization, secret exclusion.
+- `AGENT_OS_EXECUTION_SPEC.md` — canonical task lifecycle and recovery/idempotency requirements.
+- `AGENT_OS_DRY_RUN_SPEC.md` — zero-cost failure simulation required before real provider rollout.
+- `AGENT_OS_IMPLEMENTATION_PLAN.md` — implementation sequence and phase gates.
+- `CLAUDE_IMPLEMENTATION_INSTRUCTIONS.md` — handoff instructions for a future Claude implementation pass.
+
+These documents are subordinate to human/project authority and are intended to be implemented as a coherent control plane, not as independent optional guidance.
