@@ -25,9 +25,21 @@ Verify and reconcile:
 - BLOCKS_MULTI_MODEL_AGENT_ARCHITECTURE_PLAN.md
 - start-it-agent-operating-system.md
 
-Output: one implementation manifest and a list of contradictions. Do not silently resolve material contradictions.
+Output: one implementation manifest and a list of contradictions. Do not silently resolve material contradictions. The repository-reality reconciliation is now captured in `AGENT_OS_BLOCKS_RECONCILIATION.md` and supersedes earlier assumptions about Blocks.
 
-## 3. Phase 1 — Schemas
+## 3. Phase 0.5 — Blocks substrate reconciliation
+
+Complete before Phase 1:
+- read the remaining Blocks policy/team/context/proposals/persistence/permission/trust files;
+- establish AgentOSProject vs BlocksWorkspace naming;
+- decide vendoring/fork/dependency strategy;
+- identify the exact provider pre-call cost-control seam;
+- identify the MCP authorization boundary;
+- record which Blocks primitives are KEEP, EXTEND, WRAP, or NEW in `AGENT_OS_BLOCKS_RECONCILIATION.md`.
+
+No paid provider calls.
+
+## 4. Phase 1 — Schemas
 
 Create versioned schemas for:
 - TaskEnvelope;
@@ -44,7 +56,7 @@ Create versioned schemas for:
 
 All schemas require ids, timestamps, project identity, and provenance where applicable.
 
-## 4. Phase 2 — Policy engine
+## 5. Phase 2 — Policy engine
 
 Implement:
 - precedence;
@@ -59,7 +71,7 @@ Return ALLOW / DENY / ESCALATE / REQUIRES_HUMAN.
 
 Unit-test every deny condition.
 
-## 5. Phase 3 — Cost controller
+## 6. Phase 3 — Cost controller
 
 Implement:
 - pricing configuration outside source;
@@ -75,7 +87,7 @@ Implement:
 
 No provider integration yet.
 
-## 6. Phase 4 — Context/cache engine
+## 7. Phase 4 — Context/cache engine
 
 Implement:
 - layered context;
@@ -86,7 +98,7 @@ Implement:
 - cache-safe stable prefixes;
 - freshness metadata.
 
-## 7. Phase 5 — Tool gateway
+## 8. Phase 5 — Tool gateway
 
 Implement one validated gateway for all external actions.
 
@@ -99,7 +111,7 @@ Require:
 - schema validation;
 - policy decision.
 
-## 8. Phase 6 — Agent network
+## 9. Phase 6 — Agent network
 
 Implement:
 - AgentNetwork interface;
@@ -112,7 +124,7 @@ Implement:
 
 No Blocks-specific calls outside the adapter.
 
-## 9. Phase 7 — Orchestration
+## 10. Phase 7 — Orchestration
 
 Implement the execution state machine.
 
@@ -123,7 +135,7 @@ Start with:
 
 Then add bounded parallelism.
 
-## 10. Phase 8 — Verification
+## 11. Phase 8 — Verification
 
 Implement:
 - independent verifier;
@@ -132,7 +144,7 @@ Implement:
 - remediation loop;
 - security gate integration.
 
-## 11. Phase 9 — Trace / Alfred
+## 12. Phase 9 — Trace / Alfred
 
 Implement:
 - append-only structured traces;
@@ -142,13 +154,13 @@ Implement:
 - memory namespaces;
 - no-secret/no-private-reasoning safeguards.
 
-## 12. Phase 10 — Dry-run simulator
+## 13. Phase 10 — Dry-run simulator
 
 Implement all mandatory scenarios in AGENT_OS_DRY_RUN_SPEC.md.
 
 This phase must pass before real provider keys are introduced.
 
-## 13. Phase 11 — Provider rollout
+## 14. Phase 11 — Provider rollout
 
 Roll out:
 1. low-cost classification;
@@ -159,7 +171,7 @@ Roll out:
 
 Start with tiny task budgets and shadow routing.
 
-## 14. Phase 12 — Measured optimization
+## 15. Phase 12 — Measured optimization
 
 Measure:
 - verified success;
@@ -172,7 +184,7 @@ Measure:
 
 Only evidence-backed routing changes are allowed.
 
-## 15. Implementation constraints
+## 16. Implementation constraints
 
 - use existing project conventions;
 - no secrets in source;
@@ -185,6 +197,6 @@ Only evidence-backed routing changes are allowed.
 - no bypassing verifier;
 - no cross-project memory access.
 
-## 16. Definition of Done
+## 17. Definition of Done
 
 The Agent OS is ready for real work when the architecture, policies, dry-run scenarios, schemas, gateways, orchestration, verification, trace, and provider rollout all pass their acceptance criteria.
