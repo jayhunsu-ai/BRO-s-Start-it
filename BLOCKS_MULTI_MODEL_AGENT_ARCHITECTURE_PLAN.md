@@ -618,3 +618,41 @@ The architecture is operational when:
 **Alfred = accumulated, provenance-backed engineering experience**
 
 This is the current starting architecture, not permanent doctrine. Routing must be allowed to change when reproducible execution evidence demonstrates a better configuration.
+
+
+## 19. Agent OS boundary: Blocks is the network adapter
+
+The architecture now explicitly separates the **Agent OS** from **Blocks**.
+
+### Agent OS owns
+- brain/state;
+- policy and authority;
+- project isolation;
+- budget reservations and spend controls;
+- model routing;
+- context/cache assembly;
+- tool permissions;
+- execution lifecycle;
+- verification;
+- trace/evidence;
+- Alfred learning.
+
+### Blocks owns
+- agent discovery;
+- agent-to-agent transport;
+- invocation/message delivery;
+- network-level health and communication.
+
+Blocks must be accessed through an internal `AgentNetwork` interface and `BlocksAdapter`. No business or policy logic should depend directly on Blocks APIs.
+
+This preserves the option to replace Blocks later without rewriting the Agent OS.
+
+## 20. Financial airlock
+
+All paid model calls must pass through a cost controller before reaching a provider. Every call has task, invocation, retry, output, worker, and spend limits. Circuit breakers can halt execution. Agents cannot increase their own budgets.
+
+The $500 monthly ceiling is a hard control, not a target to consume.
+
+## 21. Zero-cost implementation gate
+
+Before real provider rollout, the complete orchestration, policy, cost, security, cache, verification, and failure paths must pass the dry-run simulator defined in `AGENT_OS_DRY_RUN_SPEC.md`.
