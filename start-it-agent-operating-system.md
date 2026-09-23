@@ -435,6 +435,12 @@ Before feature implementation:
 - then begin the first executable foundation batch
 
 
+
+
+### Blocks substrate reconciliation
+
+`AGENT_OS_BLOCKS_RECONCILIATION.md` is the canonical decision record for how Agent OS integrates with the actual Blocks runtime. It supersedes earlier descriptions of Blocks where repository evidence differs. Implementers must read it before creating or replacing policy, context, ledger, project, team, provider, or MCP infrastructure.
+
 ## 19. Agent OS Control Plane
 
 The detailed Agent OS specifications are split into explicit control-plane documents:
