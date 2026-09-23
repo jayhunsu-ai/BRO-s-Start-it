@@ -20,7 +20,7 @@ The current frontier allocation is:
 - **Claude Sonnet 5** — high-throughput implementation
 - **Lower-cost GPT-5.6 tiers** — classification, reconnaissance, evidence extraction, Alfred distillation, and foot-soldier work
 
-Blocks is the agent communication/discovery layer. It is not the source of truth for code, task state, or architectural decisions, and it is not treated as a model provider.
+Blocks is the initial agent-network/execution backend. It already contains runtime policy, audit, usage, context, teams, projects, providers, and MCP primitives. Agent OS owns the higher-level engineering control plane and must not duplicate those concerns without an explicit authority boundary. The canonical reconciliation is `AGENT_OS_BLOCKS_RECONCILIATION.md`.
 
 The architecture must:
 - keep role and model responsibilities explicit;
@@ -620,7 +620,7 @@ The architecture is operational when:
 This is the current starting architecture, not permanent doctrine. Routing must be allowed to change when reproducible execution evidence demonstrates a better configuration.
 
 
-## 19. Agent OS boundary: Blocks is the network adapter
+## 19. Agent OS boundary: reconciled Blocks runtime
 
 The architecture now explicitly separates the **Agent OS** from **Blocks**.
 
@@ -637,13 +637,26 @@ The architecture now explicitly separates the **Agent OS** from **Blocks**.
 - trace/evidence;
 - Alfred learning.
 
-### Blocks owns
-- agent discovery;
-- agent-to-agent transport;
-- invocation/message delivery;
-- network-level health and communication.
+### Blocks owns or supplies
+- agent runtime/execution substrate;
+- agent discovery and invocation primitives;
+- provider/driver execution;
+- local runtime context compaction;
+- native permission backstop;
+- audit/runtime persistence primitives;
+- MCP connectivity.
 
-Blocks must be accessed through an internal `AgentNetwork` interface and `BlocksAdapter`. No business or policy logic should depend directly on Blocks APIs.
+### Agent OS governs above Blocks
+- task state;
+- authority and project isolation;
+- hard budget/cost reservations;
+- model routing;
+- L0–L6 context assembly;
+- tool authorization;
+- verification;
+- engineering trace and Alfred learning.
+
+Blocks must be accessed through an internal `AgentNetwork` interface and `BlocksAdapter` for Agent OS orchestration. Existing Blocks runtime components may remain internal implementation dependencies behind that adapter. No Agent OS business or policy logic should depend directly on Blocks-specific APIs.
 
 This preserves the option to replace Blocks later without rewriting the Agent OS.
 
