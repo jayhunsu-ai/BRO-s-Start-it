@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-Define the system that surrounds the Blocks agent network. Blocks is a replaceable **agent-network adapter** for discovery and agent-to-agent communication. It is not the Agent OS, source of truth, budget authority, security policy, context manager, verifier, or memory system.
+Define the Agent OS control plane around the existing Blocks runtime. Blocks is the initial **agent-network/execution backend**, not the owner of Agent OS task state, authority, budget, project isolation, verification, or engineering memory. Blocks already provides runtime policy, context compaction, audit, teams, providers, projects, and MCP; these are reused or extended where compatible rather than rebuilt in parallel. See `AGENT_OS_BLOCKS_RECONCILIATION.md` for the canonical ownership and integration decisions.
 
 The Agent OS owns orchestration, policy, budgets, permissions, context assembly, execution state, evidence, verification, and Alfred learning.
 
@@ -65,6 +65,10 @@ TRACE -> ALFRED DISTILLATION -> MEMORY
 | Alfred | provenance-backed learning | unverified truth |
 | GitHub | code/history truth | orchestration |
 | Asana | execution/task truth | code truth |
+
+## 4. Blocks boundary and reconciliation
+
+Read `AGENT_OS_BLOCKS_RECONCILIATION.md` before implementing this section. Agent OS policy is authoritative for Agent OS work; Blocks policy is a runtime backstop and may never upgrade an Agent OS denial. Blocks context compaction is complementary to Agent OS context assembly. Blocks' local Project concept is not the Agent OS security Project. Blocks provider/driver execution must have a pre-billable-call cost-control seam before paid rollout.
 
 ## 4. Blocks boundary
 
@@ -168,6 +172,7 @@ Any limit produces a structured halt, not an implicit retry.
 
 ## 11. Build order
 
+0.5. reconcile actual Blocks substrate and integration seams
 1. schemas/contracts
 2. policy engine
 3. cost controller
