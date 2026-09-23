@@ -270,6 +270,12 @@ Every task produces three outputs:
 Software makes Start-It better. Evidence makes the work trustworthy. Experience makes the next agent better.
 
 
+
+
+### Blocks substrate reconciliation
+
+`AGENT_OS_BLOCKS_RECONCILIATION.md` is the canonical decision record for how Agent OS integrates with the actual Blocks runtime. It supersedes earlier descriptions of Blocks where repository evidence differs. Implementers must read it before creating or replacing policy, context, ledger, project, team, provider, or MCP infrastructure.
+
 # Agent OS Control-Plane Pack
 
 Before creating or invoking production agents, read the following canonical control documents:
