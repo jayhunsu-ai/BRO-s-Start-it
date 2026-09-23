@@ -268,3 +268,32 @@ Every task produces three outputs:
 3. Experience
 
 Software makes Start-It better. Evidence makes the work trustworthy. Experience makes the next agent better.
+
+
+# Agent OS Control-Plane Pack
+
+Before creating or invoking production agents, read the following canonical control documents:
+
+1. `AGENT_OS_ARCHITECTURE.md`
+2. `AGENT_OS_BRAIN_AND_POLICY.md`
+3. `AGENT_OS_COST_AND_BUDGET.md`
+4. `AGENT_OS_SECURITY_AND_PERMISSIONS.md`
+5. `AGENT_OS_CONTEXT_AND_CACHE.md`
+6. `AGENT_OS_EXECUTION_SPEC.md`
+7. `AGENT_OS_DRY_RUN_SPEC.md`
+8. `AGENT_OS_IMPLEMENTATION_PLAN.md`
+
+## Mandatory control-plane rule
+
+Blocks is the initial agent-network adapter, not the Agent OS itself.
+
+No model call may bypass:
+`Policy Engine -> Cost Controller -> Provider/Agent Network Gateway`.
+
+No tool call may bypass the Tool Gateway.
+
+No implementation may bypass independent verification.
+
+No real provider credentials should be enabled until the dry-run acceptance suite passes.
+
+For future implementation, `CLAUDE_IMPLEMENTATION_INSTRUCTIONS.md` is the execution handoff.
