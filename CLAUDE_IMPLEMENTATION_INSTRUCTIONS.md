@@ -21,6 +21,7 @@ Read in this order:
 9. AGENT_CREATION_PACK.md
 10. BLOCKS_MULTI_MODEL_AGENT_ARCHITECTURE_PLAN.md
 11. start-it-agent-operating-system.md
+12. AGENT_OS_BLOCKS_RECONCILIATION.md
 
 Then inspect the repository and CodeGraph. Planning documents are intent; repository reality wins.
 
@@ -41,14 +42,15 @@ Do not implement until the manifest is coherent.
 
 1. Build contracts before integrations.
 2. Build policy and cost controls before real providers.
-3. Build the Blocks adapter behind an internal AgentNetwork interface.
-4. Keep provider credentials outside source.
-5. Keep provider-specific logic behind a provider gateway.
-6. Keep budget authority outside model authority.
-7. Use CodeGraph first for structural questions.
-8. Make all tool calls pass through the Tool Gateway.
-9. Make all model calls pass through the Cost Controller/provider gateway.
-10. Make verification independent from implementation.
+3. Reconcile existing Blocks primitives before creating replacements; follow `AGENT_OS_BLOCKS_RECONCILIATION.md`.
+4. Build the Blocks adapter behind an internal AgentNetwork interface.
+5. Keep provider credentials outside source.
+6. Keep provider-specific logic behind a provider gateway.
+7. Keep budget authority outside model authority.
+8. Use CodeGraph first for structural questions.
+9. Make all tool calls pass through the Tool Gateway.
+10. Make all model calls pass through the Cost Controller/provider gateway.
+11. Make verification independent from implementation.
 11. Prefer disposable bounded workers.
 12. Preserve project isolation.
 13. Add tests for every policy deny path.
@@ -72,7 +74,7 @@ During implementation:
 
 ## Required implementation order
 
-Schemas -> policy -> cost -> context/cache -> tool gateway -> AgentNetwork/BlocksAdapter -> orchestration -> verification -> trace/Alfred -> dry-run -> provider rollout -> measured optimization.
+Blocks substrate reconciliation -> schemas -> policy -> context/cache -> tool gateway -> AgentNetwork/BlocksAdapter -> orchestration -> verification -> trace/Alfred -> dry-run -> provider rollout -> measured optimization.
 
 ## Required handoff
 
