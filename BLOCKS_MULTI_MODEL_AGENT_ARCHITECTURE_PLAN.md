@@ -1,436 +1,474 @@
 # Start-It / BRO / Veltrix — Blocks Multi-Model Agent Architecture Plan
 
-**Status:** Proposed architecture — execution-ready, evidence-driven, reversible
+**Status:** Execution-ready, evidence-driven, reversible
 **Target ref:** `codex/staging-environment`
 **Scope:** Shared agent architecture for Start-It / BRO / Veltrix, with the same pattern reusable by the L&D platform.
+
+The canonical role/model/task contract is `AGENT_MODEL_ROLE_CONTRACT.md`.
 
 ---
 
 ## 1. Purpose
 
-Build a model-diverse engineering agent network in which GPT-6 Astra, Claude Fable 5.1, Claude Opus 5, and Claude Sonnet 5 have distinct responsibilities while remaining interoperable through Blocks.
+Build a model-diverse engineering agent network in which model choice is routed by task requirements rather than treated as a fixed hierarchy.
+
+The current frontier allocation is:
+
+- **Claude Opus 5.5** — Chief of Staff and difficult engineering escalation
+- **Claude Fable 5.1** — architecture/system-design escalation
+- **GPT-6 Astra** — security authority and security gate
+- **Claude Sonnet 5** — high-throughput implementation
+- **Lower-cost GPT-5.6 tiers** — classification, reconnaissance, evidence extraction, Alfred distillation, and foot-soldier work
 
 Blocks is the agent communication/discovery layer. It is not the source of truth for code, task state, or architectural decisions, and it is not treated as a model provider.
 
 The architecture must:
-
-- keep model responsibilities explicit;
+- keep role and model responsibilities explicit;
 - allow agents to call or consult other agents when the task warrants it;
 - prevent one model from becoming an unquestioned authority;
 - preserve GitHub as code truth and Asana as execution truth;
 - enforce security review independently of implementation ownership;
+- support many bounded foot soldiers;
 - minimize unnecessary model calls and AI spend;
 - capture evidence for consequential decisions;
 - permit routing changes when measured execution proves a better design.
 
 ---
 
-## 2. Repository alignment
+## 2. Frontier model update
 
-This plan extends the existing `AGENT_CREATION_PACK.md` rather than replacing it.
+The previous plan used Fable 5.1 as architecture lead and Opus 5 as principal engineering. That is superseded.
 
-The creation pack already establishes:
+Anthropic's September 2026 Opus 5.5 release materially changes the economics of the command layer. Opus 5.5 is positioned as Anthropic's leading model, with strong agentic coding and knowledge-work performance, while its API pricing is $4/M input and $20/M output. Fable 5.1 remains $10/M input and $50/M output.
 
-- CodeGraph-first repository understanding;
-- evidence states (`OBSERVED`, `VERIFIED`, `INFERRED`, `STALE`, `UNKNOWN`);
-- independent Standards Verification;
-- GitHub / Asana / Alfred source-of-truth separation;
-- structured engineering traces;
-- model routing as an evidence-driven system;
-- the rule that nothing becomes DONE without independent verification.
+Therefore:
 
-This document specializes those principles into a multi-provider Blocks network.
+**Opus 5.5 is the default Chief of Staff.**
 
-The existing agent pack remains authoritative for the general engineering operating model. This document is authoritative for the proposed Blocks/model topology unless a later verified architecture supersedes it.
+Fable 5.1 remains available for architecture cases where its additional reasoning/horizon is justified by the task.
+
+GPT-6 Astra remains the security authority rather than becoming the general orchestrator.
+
+Sonnet 5 remains the high-throughput implementation model.
+
+Lower-cost models should absorb large amounts of narrow work rather than forcing the command layer to perform it.
 
 ---
 
-# 3. Target topology
+## 3. Target topology
 
-```text
+```
                                   USER / PROJECT LEAD
                                            |
                                            v
                               +---------------------------+
                               |     ORCHESTRATION LAYER    |
-                              | task selection / context  |
-                              | routing / state / budget  |
+                              | task / context / routing  |
+                              | state / budget / evidence |
                               +-------------+-------------+
                                             |
                                       BLOCKS NETWORK
                                             |
-              +-----------------------------+-----------------------------+
-              |                             |                             |
-              v                             v                             v
-     +----------------+           +----------------+           +----------------+
-     | ASTRA SECURITY |           | FABLE 5.1      |           | OPUS 5          |
-     | Security Chief |<--------->| Architecture & |<--------->| Principal       |
-     | Security Gate  |           | Planning       |           | Engineer        |
-     +-------+--------+           +-------+--------+           +-------+--------+
-             |                            |                            |
-             +----------------------------+----------------------------+
-                                          |
-                                          v
-                                  +---------------+
-                                  | SONNET 5      |
-                                  | Implementation|
-                                  | / QA / Routine|
-                                  +---------------+
+          +----------------------+----------+----------------------+
+          |                      |                                 |
+          v                      v                                 v
+ +----------------+     +----------------+                +----------------+
+ | OPUS 5.5       |     | FABLE 5.1     |                | ASTRA          |
+ | Chief of Staff |<--->| Architecture   |<-------------->| Security       |
+ | Difficult Eng. |     | Systems Lead   |                | Security Gate  |
+ +-------+--------+     +-------+--------+                +-------+--------+
+         |                      |                                 |
+         +----------------------+---------------------------------+
+                                |
+                                v
+                 +--------------------------------+
+                 | SONNET 5 + FOOT-SOLDIERS       |
+                 | implementation / tests / docs  |
+                 | bounded parallel execution     |
+                 +--------------------------------+
 
-       GitHub = code truth       Asana = execution truth       Alfred = experience
-       CodeGraph = structural map       Tests/runtime = behavioral evidence
+ GitHub = code truth     Asana = execution truth     Alfred = experience
+ CodeGraph = structural map       Tests/runtime = behavioral evidence
 ```
 
-Agents may communicate through Blocks, but communication does not imply authority. Each agent remains constrained by its role and tool permissions.
+Agents may communicate through Blocks, but communication does not imply authority.
 
 ---
 
-# 4. Model roles
+## 4. Command roles
 
-## 4.1 GPT-6 Astra — Security Authority
+### 4.1 Chief of Staff — Claude Opus 5.5
 
-**Primary responsibility:** adversarial security analysis and security approval.
+Primary responsibility:
+- orchestration;
+- dependency-aware sequencing;
+- task decomposition;
+- routing;
+- context assembly;
+- cross-domain synthesis;
+- AI budget control;
+- escalation;
+- execution state.
 
-Astra is deliberately NOT the universal project orchestrator.
+The Chief of Staff should:
+- inspect repository state before assignment;
+- use CodeGraph first for structural questions;
+- spawn specialists and foot soldiers rather than doing all work itself;
+- maintain one primary owner per implementation task;
+- require evidence and independent verification;
+- route architectural disputes to Fable;
+- route security boundaries to Astra;
+- escalate consequential decisions to the human/project authority.
 
-Responsibilities:
+Opus 5.5 is not granted universal technical or product authority merely because it is the default command model.
 
+### 4.2 Architecture Lead — Claude Fable 5.1
+
+Use for:
+- difficult cross-domain architecture;
+- major migrations;
+- competing architecture analysis;
+- system-boundary decisions;
+- architecture deadlocks;
+- long-horizon plans where Opus 5.5 evidence is insufficient.
+
+Fable is an escalation specialist, not the default coordinator.
+
+### 4.3 Security Authority — GPT-6 Astra
+
+Own:
 - threat modeling;
-- trust-boundary analysis;
-- authentication and session security;
-- authorization and RBAC/RLS review;
-- tenant-isolation review;
-- secrets and credential-flow review;
-- API abuse and input-validation analysis;
-- webhook/payment integration security;
-- dependency and supply-chain security;
-- AI-agent/tool permission analysis;
-- infrastructure exposure review;
-- security-focused PR/diff review;
-- security regression analysis;
-- release security gate;
-- escalation of critical security findings.
+- trust boundaries;
+- authentication/session security;
+- authorization/RBAC/RLS;
+- tenant isolation;
+- secrets;
+- API abuse;
+- input validation;
+- webhooks/payment security;
+- supply chain/dependencies;
+- agent/tool permissions;
+- infrastructure exposure;
+- security release gates.
 
-Astra may recommend architectural changes, but implementation ownership remains with the appropriate engineering agent.
+Astra can block security-sensitive work when the block is supported by observable evidence.
 
-Astra should receive the minimum privileges necessary for review. Production write/destructive access is not a default capability.
+### 4.4 Independent Standards Verifier
 
-### Security disposition
+The verifier is selected independently from the implementation path when practical.
 
-For security gates, Astra should return a structured result such as:
-
-```json
-{
-  "disposition": "PASS | CHANGES_REQUIRED | BLOCK",
-  "severity": "INFO | LOW | MEDIUM | HIGH | CRITICAL",
-  "findings": [],
-  "evidence": [],
-  "required_actions": [],
-  "confidence": 0.0
-}
-```
-
-Astra's conclusions must cite observable evidence: source, configuration, test result, runtime observation, dependency information, or reproducible behavior.
-
----
-
-## 4.2 Claude Fable 5.1 — Architecture / Systems Lead
-
-**Primary responsibility:** high-level technical reasoning and architecture.
-
-Responsibilities:
-
-- translate product requirements into technical plans;
-- evaluate competing architectures;
-- reason across frontend/backend/data/infrastructure boundaries;
-- sequence dependencies;
-- identify prerequisite work;
-- design interfaces and contracts;
-- review major implementation plans;
-- coordinate difficult cross-domain changes;
-- synthesize feedback from specialist agents;
-- propose changes to the execution plan.
-
-Fable is the default architecture/planning authority, but not an absolute authority. Consequential decisions require evidence and can be challenged by specialists, verification, or execution results.
-
----
-
-## 4.3 Claude Opus 5 — Principal Engineering / Difficult Work
-
-**Primary responsibility:** technically difficult implementation and independent engineering judgment.
-
-Use Opus for:
-
-- difficult multi-file changes;
-- complex debugging;
-- deep refactors;
-- high-risk migrations;
-- difficult performance work;
-- complicated integration work;
-- independent review of important implementation choices;
-- tasks where Sonnet is likely to require significant rework.
-
-Opus should not automatically be invoked for routine work. The orchestrator should route by task difficulty and evidence rather than prestige of the model.
-
----
-
-## 4.4 Claude Sonnet 5 — Execution / High-Throughput Engineering
-
-**Primary responsibility:** reliable implementation at high throughput.
-
-Use Sonnet for:
-
-- ordinary feature implementation;
-- frontend/backend task execution;
+It checks:
+- requirement satisfaction;
+- scope;
 - tests;
-- documentation;
-- routine debugging;
-- small refactors;
-- mechanical migrations;
-- test-fix loops;
-- implementation following an already-approved contract.
+- regressions;
+- security;
+- authorization;
+- data integrity;
+- failure behavior;
+- observability;
+- maintainability;
+- evidence;
+- CodeGraph impact;
+- provenance.
 
-Sonnet must not silently redesign architecture when executing a scoped task. If implementation reveals an architectural problem, it escalates instead of improvising around it.
+Return exactly:
+- APPROVE
+- CHANGES REQUIRED
+- REJECT
 
 ---
 
-# 5. Blocks responsibilities
+## 5. Foot-soldier network
 
-Blocks is the common agent network.
+The network should contain many reusable narrow capabilities.
 
-Each specialist is exposed as a Blocks agent with:
+Foot soldiers are instantiated on demand rather than kept as permanent personas.
 
-- stable agent identity;
-- explicit role description;
+### Discovery
+- Repo Scout
+- CodeGraph Analyst
+- Dependency Tracer
+- Impact Analyst
+- Git History Investigator
+- Duplicate Detector
+
+### Implementation
+- Backend Worker
+- Frontend Worker
+- Database Worker
+- API Contract Worker
+- Integration Worker
+- Migration Worker
+- Refactoring Worker
+- Dependency Upgrade Worker
+
+### Testing
+- Test Generator
+- Unit Test Worker
+- Integration Test Worker
+- E2E Worker
+- Regression Hunter
+- Failure Injection Worker
+- Test Repair Worker
+- Evidence Worker
+
+### Security
+- Auth Auditor
+- Authorization Auditor
+- Tenant Isolation Auditor
+- RLS Auditor
+- Secret Scanner
+- Dependency/CVE Auditor
+- API Abuse Auditor
+- Input Validation Auditor
+- Webhook Security Auditor
+- Payment Security Auditor
+- Supply Chain Auditor
+- Agent Permission Auditor
+
+### L&D
+- Identity Worker
+- Biometric Worker
+- Liveness/Face-Match Worker
+- Exam Session Worker
+- Proctoring Worker
+- Remita Worker
+- Multi-Tenant Worker
+- Demo Worker
+
+### Platform
+- CI Fixer
+- Docker Worker
+- Environment Auditor
+- Deployment Investigator
+- Healthcheck Worker
+- Observability Worker
+- Log Investigator
+- Rollback Planner
+- Infrastructure Cost Worker
+
+### Product / evidence
+- Acceptance Criteria Worker
+- Backlog Decomposer
+- Dependency Planner
+- Scope Guardian
+- Bug Triage Worker
+- Waitlist Worker
+- Release Evidence Worker
+- API Documentation Worker
+- Runbook Worker
+- ADR Worker
+
+A foot soldier should normally have one bounded objective and a strict budget. It should return evidence, not an essay.
+
+---
+
+## 6. Blocks responsibilities
+
+Each Blocks agent has:
+- stable identity;
+- role;
 - model/provider configuration;
 - allowed tools;
 - input/output contract;
-- task/session trace metadata;
 - project context policy;
+- trace metadata;
 - cost/routing metadata.
 
-The network should support:
-
-```text
-orchestrator -> specialist
-specialist -> specialist
-specialist -> orchestrator
-reviewer -> implementation owner
-security -> architecture
-architecture -> security
-```
-
-Agent-to-agent calls should be purposeful, not conversational by default.
-
-Every call should have:
-
+Agent-to-agent calls carry:
 - caller;
 - target;
 - task ID;
-- reason for delegation;
+- reason;
 - compact context;
 - expected output;
 - result/disposition;
 - latency/cost metadata where available.
 
+Agent communication is purposeful, not conversational by default.
+
 ---
 
-# 6. Context architecture
+## 7. Context architecture
 
-Do NOT permanently inject the entire repository, Asana backlog, or every previous agent conversation into every model.
+Do not permanently inject the entire repository, Asana backlog, or every prior conversation into every model.
 
-Use layered context.
-
-### Layer 1 — Task context
-
+### Layer 1 — Task
 - Asana task;
 - acceptance criteria;
 - dependencies;
-- current status;
-- relevant project decision records.
+- status;
+- relevant decisions.
 
-### Layer 2 — Repository context
-
-- current branch/ref;
+### Layer 2 — Repository
+- ref/commit;
 - CodeGraph findings;
 - relevant files/symbols;
 - tests;
 - configuration;
-- recent relevant commits/diffs.
+- relevant commits/diffs.
 
-### Layer 3 — Specialist context
-
-Only the information required by the specialist's role.
-
-Example: Astra gets trust boundaries, relevant code, auth/data flows, configuration, and the proposed change—not the entire unrelated UI.
+### Layer 3 — Specialist
+Only role-relevant context.
 
 ### Layer 4 — Evidence
-
 - test output;
 - runtime observations;
 - security scans;
-- CI state;
+- CI;
 - dependency information;
 - prior verified findings.
 
-This keeps context smaller, reduces cost, and makes conclusions easier to audit.
+This is especially important for foot soldiers: their context should be small enough that a large number of workers can run without multiplying cost unnecessarily.
 
 ---
 
-# 7. Standard execution lifecycle
+## 8. Standard execution lifecycle
 
-```text
+```
 ASANA TASK
     |
     v
-ORCHESTRATOR
+CHIEF OF STAFF — OPUS 5.5
     |
     +--> CodeGraph + targeted repository inspection
     |
     +--> establish evidence / dependencies / acceptance criteria
     |
-    v
-FABLE 5.1
-architecture + execution plan
+    +--> spawn specialists / foot soldiers
     |
-    +-----------------------+
-    |                       |
-    v                       v
-ASTRA                  OPUS / SONNET
-security constraints   implementation
-    |                       |
-    +-----------+-----------+
-                |
-                v
-          TEST / CI / RUNTIME
-                |
-                v
+    +--------------------------+
+    |                          |
+    v                          v
+FABLE 5.1                 SONNET 5 / WORKERS
+architecture             implementation/tests
+    |                          |
+    +-------------+------------+
+                  |
+                  v
+             TEST / CI / RUNTIME
+                  |
+                  v
           ASTRA SECURITY GATE
-                |
-        +-------+-------+
-        |               |
-     BLOCK           PASS
-        |               |
-        v               v
-   remediation      INDEPENDENT
-                    STANDARDS
+                  |
+           +------+------+
+           |             |
+        BLOCK           PASS
+           |             |
+           v             v
+      remediation   INDEPENDENT
                     VERIFICATION
-                        |
-                 +------+------+
-                 |             |
-              CHANGES       APPROVE
-                 |             |
-                 +------<------+ 
-                               |
-                               v
-                       ASANA / TRACE / ALFRED
+                         |
+                  +------+------+
+                  |             |
+               CHANGES       APPROVE
+                  |             |
+                  +------<------+
+                         |
+                         v
+                ASANA / TRACE / ALFRED
 ```
 
-Not every trivial task requires every model. The orchestrator should use the smallest sufficient path.
+Not every task requires every stage.
 
 ---
 
-# 8. Routing policy
+## 9. Routing policy
 
-Initial routing:
-
-| Task class | Default model/agent | Escalate to |
+| Task class | Default | Escalation |
 |---|---|---|
-| Security-sensitive | Astra | Fable / Opus as needed |
-| Architecture | Fable 5.1 | Opus + Astra |
-| Complex implementation | Opus 5 | Astra / Fable |
-| Normal implementation | Sonnet 5 | Opus when blocked |
-| Tests / routine fixes | Sonnet 5 | Opus when repeatedly failing |
-| Independent security review | Astra | human/project lead for critical findings |
-| Independent standards verification | Separate verifier path | Opus/Fable/Astra as evidence requires |
+| Chief of Staff | Opus 5.5 | Fable / human |
+| Architecture | Fable 5.1 | Opus 5.5 + Astra where relevant |
+| Security | Astra | human for critical risk acceptance |
+| Complex implementation | Opus 5.5 | Fable / Astra |
+| Normal implementation | Sonnet 5 | Opus 5.5 |
+| Large mechanical batch | Sonnet 5 + foot soldiers | Opus 5.5 |
+| Discovery / classification | lower-cost GPT-5.6 tier + CodeGraph | Sonnet |
+| Tests / routine fixes | Sonnet 5 / foot soldiers | Opus 5.5 |
+| Alfred distillation | lower-cost GPT-5.6 tier | Sonnet |
+| Independent verification | separate model path | frontier escalation |
 
-Routing is a starting policy, not a permanent truth.
+Routing starts in shadow mode.
 
----
-
-# 9. Agent authority model
-
-No model has unrestricted authority merely because it is the strongest model available.
-
-### Fable
-Can propose architecture and sequencing.
-
-### Opus
-Can implement complex work and challenge plans with evidence.
-
-### Sonnet
-Can implement within approved scope and escalate deviations.
-
-### Astra
-Can block a change on security grounds and require remediation, but must support the block with evidence.
-
-### Independent verifier
-Determines whether the task satisfies its acceptance and verification criteria.
-
-### Human/project authority
-Retains final authority over consequential product, budget, security-risk acceptance, and architectural tradeoffs.
+Routing changes require measured evidence such as success rate, rework, verifier outcomes, latency, spend, security findings, and escaped defects.
 
 ---
 
-# 10. Security boundaries for the agent network
+## 10. Authority model
 
-The agent system itself is a security boundary.
+No model has unrestricted authority because it is more capable.
 
-Required controls:
+**Chief of Staff:** coordinates and routes.
 
-1. API keys live outside prompts and repository files.
-2. Provider credentials are scoped per environment.
+**Fable:** proposes difficult architecture.
+
+**Opus 5.5:** executes difficult engineering and challenges plans with evidence.
+
+**Sonnet:** executes approved scope at high throughput.
+
+**Astra:** can block security-sensitive changes with evidence.
+
+**Verifier:** determines whether acceptance and verification criteria are satisfied.
+
+**Human/project authority:** retains final authority over consequential product, budget, security-risk acceptance, scope, and architecture tradeoffs.
+
+---
+
+## 11. Security boundaries
+
+1. API keys stay outside prompts and repository files.
+2. Provider credentials are scoped by environment.
 3. Blocks credentials are separated from provider credentials where practical.
-4. Agents receive only the tools required for their role.
-5. Production access is not automatically granted to implementation agents.
-6. Security agents prefer read-only inspection and controlled security tooling.
+4. Agents receive least-privilege tools.
+5. Implementers do not receive default production write/destructive access.
+6. Security agents prefer read-only inspection.
 7. Destructive operations require explicit authorization.
-8. Agent-to-agent messages are treated as untrusted input until validated.
-9. Tool arguments are validated before execution.
+8. Agent messages are untrusted input until validated.
+9. Tool arguments are validated.
 10. Sensitive outputs are excluded from persistent traces.
-11. Secrets/tokens/private credentials never enter Alfred learning data.
-12. Security findings are persisted with evidence and disposition.
+11. Secrets/tokens never enter Alfred learning.
+12. Project contexts and credentials remain isolated between Start-It/BRO and L&D.
 
 ---
 
-# 11. Failure handling
+## 12. Failure handling
+
+### Foot soldier fails
+Retry only within its budget. If blocked or uncertain, return to the specialist.
 
 ### Sonnet fails repeatedly
+Escalate to Opus 5.5.
 
-Escalate to Opus rather than endlessly retrying the same strategy.
+### Opus 5.5 discovers architectural conflict
+Escalate to Fable 5.1.
 
-### Opus discovers architectural conflict
-
-Escalate to Fable for plan revision and Astra if the conflict affects a security boundary.
+### Any security-boundary conflict
+Consult Astra.
 
 ### Astra finds a vulnerability
-
-Mark the work `CHANGES_REQUIRED` or `BLOCK` according to severity. Route remediation to the implementation owner. Re-run the security gate after remediation.
+Mark CHANGES_REQUIRED or BLOCK according to severity, route remediation, and re-run the security gate.
 
 ### Agents disagree
+Do not average opinions.
 
-Do not average their opinions.
-
-Resolve by:
-
-1. checking repository evidence;
-2. checking tests/runtime evidence;
-3. checking documented product intent;
-4. asking the relevant specialist to produce an evidence-backed analysis;
-5. using independent verification;
-6. escalating consequential unresolved decisions.
+Resolve through:
+1. repository evidence;
+2. tests/runtime evidence;
+3. documented product intent;
+4. specialist evidence-backed analysis;
+5. independent verification;
+6. human escalation when consequential.
 
 ---
 
-# 12. Evidence-driven architecture override protocol
+## 13. Evidence-driven architecture override
 
-**This architecture is intentionally overridable. It is a proposed execution design, not doctrine.**
-
-Any agent may recommend replacing, merging, splitting, reordering, or removing roles/models/communication paths when it can demonstrate a better approach.
+Any agent may recommend replacing, merging, splitting, reordering, or removing roles/models/communication paths.
 
 A proposed override must contain:
 
-```text
+```
 CURRENT PLAN
 WHAT IS WRONG / SUBOPTIMAL
 PROPOSED CHANGE
@@ -443,134 +481,93 @@ SECURITY IMPACT
 MIGRATION / ROLLBACK PLAN
 ```
 
-Acceptable evidence includes:
-
-- measured task success;
-- test pass/failure rates;
-- security findings;
-- escaped defects;
-- rework rate;
-- latency measurements;
-- token/API spend;
-- tool-call failure rates;
-- CI outcomes;
-- benchmark results relevant to the task class;
-- production/staging observations;
-- reproducible architectural defects.
-
-An agent saying "my model is better" is **not** sufficient evidence.
+“My model is better” is not evidence.
 
 ---
 
-# 13. Execution-stage override rule
+## 14. Measurement
 
-During actual execution, the current plan may be overturned if implementation evidence shows that the planned architecture is inferior.
-
-The execution agent must not silently change the architecture.
-
-Instead:
-
-```text
-DISCOVERY
-  -> record evidence
-  -> stop affected scope if necessary
-  -> propose alternative
-  -> compare current vs proposed
-  -> security review if boundary changes
-  -> independent verification
-  -> approve/reject change
-  -> update plan
-  -> continue execution
-```
-
-For urgent security issues, the security gate may temporarily block the affected path while the alternative is evaluated.
-
-The updated architecture becomes authoritative only after the change is documented and the relevant source-of-truth documents are updated.
-
----
-
-# 14. Measurement / routing feedback loop
-
-Every meaningful agent task should contribute structured routing evidence:
-
+Record:
 - task class;
-- model/agent;
-- tools used;
-- input/output usage where available;
+- role;
+- model;
+- tools;
+- calls;
+- input/output usage;
+- cache usage where available;
 - latency;
 - tests;
 - review findings;
 - verifier result;
 - rework;
-- failure category;
-- security outcome.
+- escaped defects;
+- security outcome;
+- cost.
 
-Use this data to determine whether routing should change.
+Optimize for cost per verified successful task.
 
-Start recommendations in shadow mode. Do not automatically increase spend, reduce verification, weaken security, or alter merge authority based solely on a learned routing recommendation.
-
----
-
-# 15. Project applicability
-
-## Start-It / BRO / Veltrix
-
-This is the primary target for the initial Blocks network.
-
-The network should operate against the existing repository and staging environment while preserving the existing CodeGraph, Alfred, GitHub, and Asana operating model.
-
-## L&D platform
-
-Reuse the same agent topology, but provide a separate project context and permissions boundary.
-
-Do not allow project context to leak between the two projects merely because the same Blocks network hosts both.
-
-Shared specialist identities may exist, but project-specific state, credentials, task context, traces, and repositories remain isolated.
+Recommendations begin in shadow mode and cannot automatically increase spend, weaken security, remove verification, or change merge authority.
 
 ---
 
-# 16. Implementation stages
+## 15. Project applicability
 
-## Stage A — Contract
+### Start-It / BRO / Veltrix
 
-1. Define four Blocks agent identities.
+Primary target for the Blocks network.
+
+### L&D platform
+
+Reuse the topology, but isolate:
+- repository;
+- credentials;
+- task context;
+- traces;
+- project state;
+- deployment permissions.
+
+Shared specialist identities are allowed; shared project state is not.
+
+---
+
+## 16. Implementation stages
+
+### Stage A — Contract
+1. Register the command roles.
 2. Define provider/model configuration outside source control.
-3. Define tool permissions per role.
-4. Define request/response contracts.
+3. Define tool permissions.
+4. Define task/result contracts.
 5. Define trace schema.
-6. Define routing table.
+6. Define routing.
 
-## Stage B — Connectivity
-
-1. Connect Blocks MCP/agent interface to the orchestrator.
-2. Register Fable, Opus, Sonnet, and Astra agents.
-3. Verify each agent independently.
+### Stage B — Connectivity
+1. Connect Blocks.
+2. Register Opus 5.5, Fable 5.1, Astra, Sonnet 5, and lower-cost worker models.
+3. Verify each independently.
 4. Verify agent-to-agent calls.
-5. Verify failure/timeouts and bounded retries.
+5. Verify timeouts/retries/budgets.
 
-## Stage C — Repository integration
-
-1. Connect GitHub context.
-2. Connect Asana task context.
+### Stage C — Repository integration
+1. Connect GitHub.
+2. Connect Asana.
 3. Connect CodeGraph.
-4. Build targeted-context assembly.
-5. Ensure no secrets enter model context.
+4. Build targeted context assembly.
+5. Ensure secrets cannot enter context.
 
-## Stage D — Execution loop
-
-1. Route task.
-2. Plan.
+### Stage D — Execution loop
+1. Route.
+2. Discover.
 3. Implement.
 4. Test.
-5. Security review.
+5. Security review when required.
 6. Independent verification.
 7. Trace.
 8. Update Asana.
+9. Distill to Alfred.
 
-## Stage E — Measurement
-
+### Stage E — Measurement
 1. Collect routing metrics.
-2. Compare model performance by task class.
+2. Compare task success by role/model.
 3. Measure cost and latency.
 4. Measure rework and escaped defects.
 5. Review security outcomes.
@@ -578,37 +575,35 @@ Shared specialist identities may exist, but project-specific state, credentials,
 
 ---
 
-# 17. Definition of Done for the agent architecture
+## 17. Definition of Done
 
-The architecture is not considered operational merely because four APIs respond.
-
-It is operational when:
-
-- all four agents are independently callable;
-- Blocks can route between them;
+The architecture is operational when:
+- command roles are independently callable;
+- foot soldiers can be spawned with bounded permissions;
+- Blocks routes correctly;
 - task context is assembled from the correct sources;
 - role boundaries are enforced;
-- security review can block implementation;
+- security can block implementation;
 - independent verification is preserved;
 - failures are observable;
 - traces contain evidence but no secrets/private reasoning;
 - routing/cost data is measurable;
-- the execution-stage override mechanism works;
-- the architecture can be changed without rewriting the entire system.
+- project contexts are isolated;
+- the architecture can evolve without rewriting the system.
 
 ---
 
-# 18. Final architectural position
+## 18. Final architectural position
 
-The recommended initial division of labor is:
+**Opus 5.5 = Chief of Staff + difficult engineering escalation**
 
-**Astra = Security**
+**Fable 5.1 = architecture escalation**
 
-**Fable 5.1 = Architecture / Systems reasoning**
+**GPT-6 Astra = security authority**
 
-**Opus 5 = Principal engineering / difficult implementation**
+**Sonnet 5 = high-throughput implementation**
 
-**Sonnet 5 = High-throughput implementation / routine engineering**
+**Lower-cost models = classification, discovery, evidence extraction, Alfred distillation, and foot soldiers**
 
 **Blocks = agent network and communication layer**
 
@@ -622,4 +617,4 @@ The recommended initial division of labor is:
 
 **Alfred = accumulated, provenance-backed engineering experience**
 
-This is the recommended starting architecture, not a permanent hierarchy. The execution system is explicitly designed to overturn it when a better plan is demonstrated with clear, reproducible evidence.
+This is the current starting architecture, not permanent doctrine. Routing must be allowed to change when reproducible execution evidence demonstrates a better configuration.
