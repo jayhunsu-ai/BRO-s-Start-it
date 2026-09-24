@@ -61,7 +61,7 @@ Concretely:
 | Agent lifecycle (`role+task+skills+tools+context+budget+expiry`, disposable) | `server/teams.ts` (human-approved hires, persistent agents, no expiry/budget) | Partial |
 | Project isolation (`project_id`, credential/memory namespace separation) | `server/projects.ts` (folder lens + brief, single local workspace, no credential separation) | Partial — different concept, same name |
 | Environment tiers (LOCAL/STAGING/PRODUCTION) | None | **Absent** |
-| Verification (independent APPROVE/CHANGES REQUIRED/REJECT) | `server/proposals.ts` (`worthReviewing`, `reviewPrompt` — not yet read in full; likely closer to "should a human review this" than independent model verification) | Unconfirmed — needs read before Phase 8 |
+| Verification (independent APPROVE/CHANGES REQUIRED/REJECT) | **None found.** `server/proposals.ts` is *not* a verification system — confirmed by full read (§9). It's a "propose a reusable skill from a taught conversation" gate (≥4 replies, ≥2 user turns, ≥1500 chars, dedup by conversation fingerprint) with its own `ProposalStore`; it stages skill suggestions, never verifies work output. | **Absent** (corrected from "Unconfirmed") |
 | Trace / evidence schema with provenance and evidence states | `server/ledger.ts` (hash-chained, signed, but no task/evidence-state/provenance fields); `server/activity.ts` (not yet read) | Partial |
 | GitHub as code truth / Asana as execution truth / CodeGraph as structural truth | None present in `server/` | **Absent** |
 | Provider gateway (credential separation, per-role model routing) | `server/providers.ts`, `server/drivers/` | Good structural fit, wrong content (no Opus/Fable/Astra role mapping) |
@@ -130,11 +130,52 @@ Per `AGENT_OS_IMPLEMENTATION_PLAN.md`, adjusted for what §2–§5 above actuall
 
 ---
 
-## 8. What I did not do
+## 8. Phase 0.5 — confirmed seams
+
+Of the requested file list, these were read in full this pass: `server/proposals.ts`, `server/permission-proxy.ts`, `server/drivers/claude.ts`, `server/harness/ask-broker.ts`. Not yet read: `server/activity.ts`, `server/store.ts`, `server/contracts.ts`, `server/context.ts`, `server/box.ts`, `server/scout.ts`, `server/composio.ts`, `SECURITY.md`, `CONTRIBUTING.md`, `LICENSING.md`, tests. The two seams asked for are answered below with evidence; the remaining files should still be read before Phase 1 starts on policy/cost work, since `activity.ts`/`contracts.ts` in particular may bear on the Trace schema (Phase 9) and `SECURITY.md` on the security invariants directly.
+
+### 8.1 The actual provider process seam
+
+**`server/drivers/claude.ts`, inside `ClaudeDriver.create().sendTurn`, at the `spawn(config.cli, argv, {...})` call.**
+
+Confirmed facts:
+
+- Each turn is a **fresh subprocess** of the `claude` CLI (`-p`, stream-json in/out), not a persistent process — continuity across turns is the CLI's own `--resume`, not Bloks holding session state. Killing the process group at turn end is how attached MCP helper processes get reaped.
+- **Model selection happens in `argv`** (`--model`), from a hardcoded `MODELS` table in this file: `{ default: "claude-sonnet-5", options: ["claude-fable-5-1", "claude-fable-5", "claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"] }`. **This directly contradicts the Agent OS docs' assumption of "Opus 5.5" as a routable model** — the driver only knows about `claude-opus-5` (no `.5`), and there is no per-role model-routing logic here at all; whatever model an agent is configured with is what every turn uses, chosen by a human when the agent (or hire) was created, not selected dynamically per task by an orchestrator.
+- **Credentials are a single global CLI login, not per-project/per-role.** The driver explicitly `delete env.ANTHROPIC_API_KEY` before spawning, so it rides the CLI's own subscription login (kept in the macOS Keychain or `~/.claude/.credentials.json`) rather than an API key Bloks controls. There is exactly one Claude Code identity per machine today — Agent OS's per-project credential separation has no seam to attach to here without either (a) running multiple isolated `claude` CLI logins somehow, or (b) switching this driver to API-key auth so Bloks can inject a project-scoped key per spawn.
+- **This is also where every MCP server for the turn gets mounted**: the user's own registered servers (prefixed `u_<slug>`), `computer` (cloud box or local Mac, via `computer-proxy` helper), `sandbox` (via `sandbox-proxy` helper), `browser` (via `browser-proxy` helper), `composio` (HTTP, with an API-key header), and `bloks` (the permission bridge itself, via `permission-proxy.ts`). A future CodeGraph/GitHub/Asana MCP server would be mounted the same way — either as a `u_<slug>` user server or a new named entry alongside `computer`/`sandbox`/`browser`, each requiring its own helper-process pattern if it needs scoped credentials the way `computer`/`sandbox`/`browser` do.
+- **`--allowedTools` is the actual access-control artifact for this turn** — only MCP servers explicitly named here are reachable at all; everything else is invisible to the CLI regardless of what's registered.
+- Non-Claude engines (Codex, Gemini CLI, Pi) each have their own driver file under `server/drivers/` with presumably their own spawn logic — **not yet confirmed to follow this same shape**; `claude.ts` should not be assumed representative of all four without reading the others.
+
+### 8.2 The actual MCP/tool authorization seam
+
+**There isn't one that reaches `policy.ts`.** The real chain, fully traced:
+
+1. Claude Code's **own internal `--permission-mode`** (`acceptEdits`, `auto`→`acceptEdits`, or `bypassPermissions`) decides, inside the CLI itself, which actions need asking about at all. This is Anthropic's logic, not Bloks'. In `bypassPermissions` mode on a non-shared turn, **no bridge is attached at all** — nothing is asked, nothing is denied, nothing is logged by anything in this repository.
+2. When the CLI's own logic decides to ask, it calls its `--permission-prompt-tool`, wired to `mcp__bloks__approve` — a **separate process**, `permission-proxy.ts`, spawned specifically for this (`PERMISSION_HELPER`), running as its own tiny MCP server over stdio.
+3. `permission-proxy.ts` forwards the question over a **unix socket** to `server/harness/ask-broker.ts`, running inside the main harness process (one socket per turn, path derived from thread id).
+4. `ask-broker.ts` — **confirmed by full read to contain no reference to `policy.ts` anywhere** — just holds the request, fires `onAsk` (which `claude.ts` turns into a `request.opened` runtime event for the UI), and waits: either a human calls `respondToRequest` (wired through `broker.answer(...)`), or a 15-minute timeout resolves it (**deny** for permissions, **best-judgment-continue** for questions — the two failure directions are deliberately asymmetric).
+
+**So `policy.ts`'s allow/deny/ask rule matching is not in this path at all** for Claude Code turns. Every permission question that reaches the bridge becomes a human-facing card with no automated rule-based short-circuit visible anywhere in `claude.ts` → `permission-proxy.ts` → `ask-broker.ts`. Where `policy.ts` actually *is* consulted remains unconfirmed — candidates not yet ruled out: a pre-turn check on which agents/tools/MCP servers a room is even allowed to attach (gating step 1 above, not step 2–4), the app-side `McpClient` path (`mcp-client.ts`, first-party UI tool calls), or agent/skill/hire creation flows in `index.ts`. This should be resolved by reading `server/index.ts`'s route handlers and `server/contracts.ts` before assuming where, if anywhere, `policy.ts` gates a live tool call.
+
+**What this means for the Agent OS Policy Engine and Cost Controller:** neither has a real interception point today for Claude-Code-driven turns unless one of:
+- (a) A new MCP server is inserted into every turn's `mcpServers` map in `claude.ts` that itself enforces Agent-OS-level policy/budget before performing an action (a genuinely new gateway, sitting where `computer`/`sandbox`/`browser` sit today);
+- (b) `ask-broker.ts` (or a wrapper around it) is extended to consult a policy/budget check *before* firing `onAsk`, auto-resolving `allow`/`deny` for the cases Agent OS's policy already has an answer for, and only escalating to a human card for genuine `ASK`/`ESCALATE` cases;
+- (c) Claude Code's own `--permission-mode` is set narrowly enough (or `bypassPermissions` is never used) that most consequential actions already reach the bridge, and (b) is layered on top of that.
+
+(b) is the smallest change consistent with what's already built — it reuses the existing socket/card/timeout machinery and only inserts a decision *before* `onAsk` fires, rather than replacing the transport. It does not, on its own, solve §4.5 (no reservation point before the model call itself starts, only before tool calls *within* a running turn) or the `bypassPermissions` gap (nothing reaches the bridge at all in that mode).
+
+---
+
+## 9. What remains before Phase 1
+
+Still unread from the original Phase 0.5 list: `server/activity.ts`, `server/store.ts`, `server/contracts.ts`, `server/context.ts`, `server/box.ts`, `server/scout.ts`, `server/composio.ts`, `SECURITY.md`, `CONTRIBUTING.md`, `LICENSING.md`, and the test suite. Of these, `contracts.ts` and `activity.ts` matter most before Phase 1/9 (they likely define the runtime-event and audit shapes any new schema needs to interoperate with), and `SECURITY.md` matters before Phase 2 (it's referenced by `README.md` as stating parts of the trust model "are not solved yet" — directly relevant to the Policy Engine's invariants).
+
+Also unconfirmed: where, if anywhere, `policy.ts` is actually called from a live code path (see §8.2) — this determines whether it's dead weight to design around or a real second authority that needs reconciling with Agent OS's Policy Engine before Phase 2. And whether the other three driver files (`codex.ts`, and whatever backs Gemini CLI and Pi) share `claude.ts`'s shape — nothing here should be assumed to generalize across drivers without reading them.
 
 - No code was written or changed.
 - No provider/model calls were made.
 - No branch was created in either repository.
 - `server/index.ts` (6,805 lines) was inspected via its import graph and header comment, not read line-by-line; anything wired only inside its route handlers (rather than imported at the top) may be under-represented above.
 
-**Per `CLAUDE_IMPLEMENTATION_INSTRUCTIONS.md`: do not implement until this manifest is coherent.** The material contradictions in §4 — especially §4.1/§4.2 (Blocks already has a policy/context/audit stack that the docs assume doesn't exist) and §4.4 (two unrelated things named "project") — need an explicit call from you before Phase 1 starts, or Phase 1's schemas will be built against an assumption the repository already contradicts.
+**Per `CLAUDE_IMPLEMENTATION_INSTRUCTIONS.md`: do not implement until this manifest is coherent.** The material contradictions in §4 — especially §4.1/§4.2 (Blocks already has a policy/context/audit stack that the docs assume doesn't exist) and §4.4 (two unrelated things named "project") — need an explicit call from you before Phase 1 starts, or Phase 1's schemas will be built against an assumption the repository already contradicts. §8's finding sharpens §4.5: it's not just that the cost controller lacks a hook point, it's that **the policy engine as currently wired has no automated decision path for Claude Code turns either** — everything that reaches the bridge is a human card, full stop, until something new is inserted.
