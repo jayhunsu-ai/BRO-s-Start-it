@@ -94,3 +94,43 @@ test("authorizeReservation validates an existing reservation without creating a 
   assert.throws(() => cc.authorizeReservation("missing"));
   assert.equal(cc.remainingUsd("p1"), 50);
 });
+
+
+test("active reservations reduce headroom before a concurrent reservation", () => {
+  const cc = new CostController({
+    ...defaultBudgetHierarchy(),
+    globalMonthlyCeilingUsd: 1,
+    dayBudgetUsd: 1,
+    taskBudgetUsd: 1,
+    invocationBudgetUsd: 0.6,
+  });
+  const first = cc.reserve({
+    projectId: "p1",
+    taskId: "t1",
+    model: "mock-opus",
+    estimatedUncachedInputTokens: 20_000,
+    estimatedCachedInputTokens: 0,
+    estimatedOutputTokens: 1000,
+  });
+  assert.ok(first);
+  // First reservation is $0.375. A second $0.375 reservation would fit the
+  // raw $1 ceiling but must be evaluated against the outstanding hold.
+  const second = cc.reserve({
+    projectId: "p1",
+    taskId: "t1",
+    model: "mock-opus",
+    estimatedUncachedInputTokens: 20_000,
+    estimatedCachedInputTokens: 0,
+    estimatedOutputTokens: 1000,
+  });
+  assert.ok(second);
+  const third = cc.reserve({
+    projectId: "p1",
+    taskId: "t1",
+    model: "mock-opus",
+    estimatedUncachedInputTokens: 20_000,
+    estimatedCachedInputTokens: 0,
+    estimatedOutputTokens: 1000,
+  });
+  assert.equal(third, null);
+});
