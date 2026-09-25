@@ -1,12 +1,5 @@
 import { CostController } from "./cost-controller.js";
 
-/**
- * Structural adapter for the Blocks financial airlock.
- *
- * Blocks remains the execution substrate. Agent OS remains the budget
- * authority. A reservation is created before a provider turn and its id is
- * handed to Blocks as AGENT_OS_COST_RESERVATION_ID.
- */
 export interface BlocksCostGate {
   authorize(input: {
     reservationId: string;
@@ -38,19 +31,18 @@ export function createBlocksCostGate(costController: CostController): BlocksCost
 
     settle(input) {
       if (input.actualCostUsd === null) {
-        // Unknown usage after a provider process ran is not silently treated
-        // as zero. Charge the full reserved maximum until a verified usage
-        // reconciliation replaces it.
+        // Unknown usage is conservatively charged at the full reservation.
         const reservation = costController.authorizeReservation(input.reservationId);
-        return costController.commit(input.reservationId, {
+        costController.commit(input.reservationId, {
           provider: input.provider,
           model: input.model,
           actualCostUsd: reservation.maxCostUsd,
           result: input.result,
         });
+        return;
       }
 
-      return costController.commit(input.reservationId, {
+      costController.commit(input.reservationId, {
         provider: input.provider,
         model: input.model,
         actualCostUsd: input.actualCostUsd,
