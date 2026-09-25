@@ -130,3 +130,19 @@ test("BlocksAdapter preserves the Blocks event subscription boundary", () => {
   unsubscribe();
   assert.equal(listeners.size, 0);
 });
+
+
+test("runtime bridge fails closed when Blocks bridge is not configured", async () => {
+  const { createBlocksAdapterFromRuntime } = await import("../src/blocks-adapter.js");
+  const previous = process.env.AGENT_OS_BLOCKS_BRIDGE;
+  delete process.env.AGENT_OS_BLOCKS_BRIDGE;
+  try {
+    await assert.rejects(
+      () => createBlocksAdapterFromRuntime("claude"),
+      /AGENT_OS_BLOCKS_BRIDGE/,
+    );
+  } finally {
+    if (previous === undefined) delete process.env.AGENT_OS_BLOCKS_BRIDGE;
+    else process.env.AGENT_OS_BLOCKS_BRIDGE = previous;
+  }
+});
