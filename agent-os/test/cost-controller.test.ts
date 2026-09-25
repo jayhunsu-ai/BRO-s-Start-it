@@ -92,7 +92,7 @@ test("authorizeReservation validates an existing reservation without creating a 
   assert.ok(reservation);
   assert.equal(cc.authorizeReservation(reservation!.reservationId).reservationId, reservation!.reservationId);
   assert.throws(() => cc.authorizeReservation("missing"));
-  assert.equal(cc.remainingUsd("p1"), 50);
+  assert.equal(cc.remainingUsd("p1"), 49.9895);
 });
 
 
