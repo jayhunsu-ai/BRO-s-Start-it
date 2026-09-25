@@ -263,14 +263,14 @@ test("execution gateway isolates concurrent turns so one completion cannot settl
   assert.ok(resolveFirst);
   assert.ok(resolveSecond);
 
-  resolveFirst!();
+  resolveFirst!({ turnId: "turn-first" });
   await firstPromise;
 
   // First completion must not consume the second reservation.
   assert.equal(cc.getLedger().length, 1);
   assert.equal(cc.getLedger()[0].actualCostUsd, 1);
 
-  resolveSecond!();
+  resolveSecond!({ turnId: "turn-second" });
   await secondPromise;
 
   assert.equal(cc.getLedger().length, 2);
