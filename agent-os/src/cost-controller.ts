@@ -103,11 +103,27 @@ export class CostController {
 
   remainingUsd(projectId: string, taskId?: string): number {
     const projectBudget = this.budgets.projectBudgetUsd[projectId] ?? this.budgets.globalMonthlyCeilingUsd;
+
+    // Reservations are already committed against the financial airlock. They
+    // must reduce available headroom before a second concurrent invocation can
+    // reserve the same budget. Otherwise two individually-valid reservations
+    // could collectively exceed the monthly/project/day/task ceilings.
+    let reservedMonthUsd = 0;
+    let reservedProjectUsd = 0;
+    let reservedTaskUsd = 0;
+    for (const reservation of this.reservations.values()) {
+      reservedMonthUsd += reservation.maxCostUsd;
+      if (reservation.projectId === projectId) reservedProjectUsd += reservation.maxCostUsd;
+      if (taskId && reservation.taskId === taskId) reservedTaskUsd += reservation.maxCostUsd;
+    }
+
     const levels = [
-      this.budgets.globalMonthlyCeilingUsd - this.spent.monthUsd,
-      projectBudget - (this.spent.perProjectUsd[projectId] ?? 0),
-      this.budgets.dayBudgetUsd - this.spent.dayUsd,
-      taskId ? this.budgets.taskBudgetUsd - (this.spent.perTaskUsd[taskId] ?? 0) : Infinity,
+      this.budgets.globalMonthlyCeilingUsd - this.spent.monthUsd - reservedMonthUsd,
+      projectBudget - (this.spent.perProjectUsd[projectId] ?? 0) - reservedProjectUsd,
+      this.budgets.dayBudgetUsd - this.spent.dayUsd - reservedMonthUsd,
+      taskId
+        ? this.budgets.taskBudgetUsd - (this.spent.perTaskUsd[taskId] ?? 0) - reservedTaskUsd
+        : Infinity,
     ];
     return Math.min(...levels); // tightest level wins — §2: "never looser"
   }
