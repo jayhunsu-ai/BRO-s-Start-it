@@ -50,16 +50,17 @@ test("a denied request short-circuits the turn as not ok", async () => {
     config: { scripts: { th3: [{ request: { tool: "run:shell", summary: "rm -rf" }, assistantText: "done", ok: true, inputTokens: 1, outputTokens: 1 }] } },
   });
   let requestId: string | undefined;
-  let completed: { ok: boolean; denials?: string[] } | null = null;
+  const completed: { value: { ok: boolean; denials?: string[] } | null } = { value: null };
   instance.adapter.onEvent((e) => {
     if (e.type === "request.opened") requestId = e.requestId;
-    if (e.type === "turn.completed") completed = e;
+    if (e.type === "turn.completed") completed.value = e;
   });
   await instance.adapter.sendTurn({ threadId: "th3", text: "go" });
   await instance.adapter.respondToRequest("th3", requestId!, { behavior: "deny" });
   await new Promise((r) => setTimeout(r, 0));
-  assert.equal(completed?.ok, false);
-  assert.deepEqual(completed?.denials, ["run:shell"]);
+  assert.ok(completed.value, "turn.completed should have fired");
+  assert.equal(completed.value.ok, false);
+  assert.deepEqual(completed.value.denials, ["run:shell"]);
 });
 
 test("sendTurn throws once the scripted turns for a thread are exhausted", async () => {
