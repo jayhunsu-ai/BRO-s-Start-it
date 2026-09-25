@@ -1,4 +1,3 @@
-import type { ProviderCostGate } from "../../server/agent-os/cost-gate.js";
 import { CostController } from "./cost-controller.js";
 
 /**
@@ -8,7 +7,25 @@ import { CostController } from "./cost-controller.js";
  * authority. A reservation is created before a provider turn and its id is
  * handed to Blocks as AGENT_OS_COST_RESERVATION_ID.
  */
-export function createBlocksCostGate(costController: CostController): ProviderCostGate {
+export interface BlocksCostGate {
+  authorize(input: {
+    reservationId: string;
+    provider: string;
+    model: string;
+    projectId?: string;
+    taskId?: string;
+  }): Promise<{ reservationId: string; projectId?: string; taskId?: string }> | { reservationId: string; projectId?: string; taskId?: string };
+  settle(input: {
+    reservationId: string;
+    provider: string;
+    model: string;
+    actualCostUsd: number | null;
+    result: "ok" | "error" | "denied";
+  }): Promise<void> | void;
+  release(input: { reservationId: string; provider: string; model: string }): Promise<void> | void;
+}
+
+export function createBlocksCostGate(costController: CostController): BlocksCostGate {
   return {
     authorize(input) {
       const reservation = costController.authorizeReservation(input.reservationId);
