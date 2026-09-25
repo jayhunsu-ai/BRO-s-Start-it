@@ -125,5 +125,5 @@ test("execution gateway releases the reservation when provider start fails", asy
   );
 
   assert.equal(cc.getLedger().length, 0);
-  assert.equal(cc.remainingUsd("p1", "t1"), 49.9895);
+  assert.equal(cc.remainingUsd("p1", "t1"), 50);
 });
