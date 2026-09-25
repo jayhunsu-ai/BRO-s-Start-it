@@ -59,3 +59,38 @@ export function createBlocksAdapter(instance: ProviderInstance): BlocksAdapter {
     },
   };
 }
+
+
+/**
+ * Load a live Blocks provider from the runtime bridge.
+ *
+ * The bridge module is supplied by the Blocks host process. Keeping the module
+ * path outside source control lets Agent OS remain independently testable and
+ * prevents a compile-time dependency on the Blocks repository.
+ *
+ * Example runtime configuration:
+ *   AGENT_OS_BLOCKS_BRIDGE=/path/to/bloks/server/agent-os-bridge.ts
+ */
+export async function createBlocksAdapterFromRuntime(
+  instanceId: string,
+  bridgeModule = process.env.AGENT_OS_BLOCKS_BRIDGE,
+): Promise<BlocksAdapter> {
+  if (!bridgeModule) {
+    throw new Error("Agent OS Blocks bridge is not configured (AGENT_OS_BLOCKS_BRIDGE).");
+  }
+
+  const bridge = (await import(bridgeModule)) as {
+    getAgentOSProvider?: (id: string) => Promise<unknown>;
+  };
+
+  if (typeof bridge.getAgentOSProvider !== "function") {
+    throw new Error("Configured Blocks bridge does not export getAgentOSProvider().");
+  }
+
+  const instance = await bridge.getAgentOSProvider(instanceId);
+  if (!instance || typeof instance !== "object") {
+    throw new Error(`Blocks provider instance "${instanceId}" is unavailable.`);
+  }
+
+  return createBlocksAdapter(instance as ProviderInstance);
+}
