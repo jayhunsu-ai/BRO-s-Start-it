@@ -56,3 +56,18 @@ export class AgentExecutionGateway {
     return { gateway, turn };
   }
 }
+
+
+/**
+ * Runtime composition helper: resolve a live Blocks instance and place the
+ * financial airlock around its ProviderAdapter.
+ */
+export async function createBlocksExecutionGateway(
+  instanceId: string,
+  costGate: import("./blocks-cost-gate.js").BlocksCostGate,
+): Promise<ProviderExecutionGateway> {
+  const { createBlocksAdapterFromRuntime } = await import("./blocks-adapter.js");
+  const adapter = await createBlocksAdapterFromRuntime(instanceId);
+  const { createProviderExecutionGateway } = await import("./provider-execution-gateway.js");
+  return createProviderExecutionGateway(adapter, costGate);
+}
