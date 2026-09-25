@@ -207,6 +207,17 @@ export class CostController {
 
   /** Reservation abandoned without a commit (e.g. denied downstream) —
    * releases the hold without touching spend or the ledger. */
+  /** Validate that a reservation still exists immediately before a provider
+   * process/API call. This is the Agent OS side of the Blocks financial
+   * airlock; it does not create a second reservation. */
+  authorizeReservation(reservationId: string): CostReservation {
+    if (!this.aiExecutionEnabled) throw new Error("Agent OS AI execution kill switch is disabled.");
+    if (this.breaker.current === "HALTED") throw new Error("Agent OS cost circuit breaker is HALTED.");
+    const reservation = this.reservations.get(reservationId);
+    if (!reservation) throw new Error(`Unknown or already-settled cost reservation "${reservationId}".`);
+    return reservation;
+  }
+
   release(reservationId: string): void {
     this.reservations.delete(reservationId);
   }
