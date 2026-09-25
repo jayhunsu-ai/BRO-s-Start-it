@@ -183,6 +183,58 @@ test("budget denial prevents provider execution", async () => {
   assert.equal(costController.getLedger().length, 0);
 });
 
+test("full execution path settles the reservation on provider completion", async () => {
+  const costController = new CostController();
+  const toolGateway = new ToolGateway(new PolicyEngine(), costController);
+  let listener: ((event: import("../src/contracts.js").RuntimeEvent) => void) | undefined;
+  const provider: ProviderAdapter = {
+    provider: "mock-paid-provider",
+    capabilities: { sessionModelSwitch: "unsupported" },
+    async sendTurn() {
+      listener?.({
+        eventId: "ev-1",
+        provider: "mock-paid-provider",
+        threadId: "thread-1",
+        turnId: "turn-1",
+        createdAt: new Date().toISOString(),
+        type: "turn.completed",
+        ok: true,
+        cost: 0.02,
+      });
+      return { turnId: "turn-1" };
+    },
+    async interruptTurn() {},
+    async respondToRequest() {},
+    hasSession() {
+      return true;
+    },
+    async stopAll() {},
+    onEvent(next) {
+      listener = next;
+      return () => {
+        if (listener === next) listener = undefined;
+      };
+    },
+  };
+  const providerGateway = createProviderExecutionGateway(
+    provider,
+    createBlocksCostGate(costController),
+  );
+  const execution = new AgentExecutionGateway(toolGateway, providerGateway);
+
+  const result = await execution.execute({
+    action: action(),
+    costEstimate: estimate(),
+    turn: turn(),
+  });
+
+  assert.equal(result.gateway.policy.decision, "ALLOW");
+  assert.equal(result.turn?.turnId, "turn-1");
+  assert.equal(costController.getLedger().length, 1);
+  assert.equal(costController.getLedger()[0].actualCostUsd, 0.02);
+  assert.equal(costController.remainingUsd("p1", "t1"), 19.98);
+});
+
 test("provider start failure releases the reservation at the Blocks execution boundary", async () => {
   const costController = new CostController();
   const toolGateway = new ToolGateway(new PolicyEngine(), costController);
