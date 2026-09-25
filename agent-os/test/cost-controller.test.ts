@@ -79,3 +79,18 @@ test("release() drops a reservation without touching spend", () => {
   assert.equal(cc.remainingUsd("p1"), before);
   assert.throws(() => cc.commit(reservation!.reservationId, { provider: "mock", model: "mock-sonnet", actualCostUsd: 0.01, result: "ok" }));
 });
+
+test("authorizeReservation validates an existing reservation without creating a second hold", () => {
+  const cc = new CostController();
+  const reservation = cc.reserve({
+    projectId: "p1",
+    model: "mock-sonnet",
+    estimatedUncachedInputTokens: 1000,
+    estimatedCachedInputTokens: 0,
+    estimatedOutputTokens: 500,
+  });
+  assert.ok(reservation);
+  assert.equal(cc.authorizeReservation(reservation!.reservationId).reservationId, reservation!.reservationId);
+  assert.throws(() => cc.authorizeReservation("missing"));
+  assert.equal(cc.remainingUsd("p1"), 50);
+});
