@@ -53,3 +53,23 @@ test("Blocks adapter denies provider execution when no reservation exists", asyn
     ),
   );
 });
+
+test("provider spawn boundary is never reached without a cost reservation", async () => {
+  const cc = new CostController();
+  const gate = createBlocksCostGate(cc);
+  let spawnCount = 0;
+
+  const invokeProvider = async (reservationId?: string) => {
+    await gate.authorize({
+      reservationId: reservationId ?? "missing",
+      provider: "mock-paid-provider",
+      model: "mock-sonnet",
+      projectId: "p1",
+      taskId: "t1",
+    });
+    spawnCount += 1;
+  };
+
+  await assert.rejects(() => invokeProvider());
+  assert.equal(spawnCount, 0);
+});
