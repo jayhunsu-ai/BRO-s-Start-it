@@ -4,6 +4,9 @@ import { CostController } from "../src/cost-controller.js";
 import { PolicyEngine } from "../src/policy-engine.js";
 import { ToolGateway } from "../src/tool-gateway.js";
 import { AgentExecutionGateway } from "../src/execution-gateway.js";
+import { createProviderExecutionGateway } from "../src/provider-execution-gateway.js";
+import { createBlocksCostGate } from "../src/blocks-cost-gate.js";
+import type { ProviderAdapter } from "../src/contracts.js";
 import type { ProviderExecutionGateway } from "../src/provider-execution-gateway.js";
 import type { ActionRequest, TurnStartResult } from "../src/contracts.js";
 
@@ -180,14 +183,29 @@ test("budget denial prevents provider execution", async () => {
   assert.equal(costController.getLedger().length, 0);
 });
 
-test("provider start failure propagates after the execution gateway has authorized the reservation", async () => {
+test("provider start failure releases the reservation at the Blocks execution boundary", async () => {
   const costController = new CostController();
   const toolGateway = new ToolGateway(new PolicyEngine(), costController);
-  const providerGateway: ProviderExecutionGateway = {
+  const provider: ProviderAdapter = {
+    provider: "mock-paid-provider",
+    capabilities: { sessionModelSwitch: "unsupported" },
     async sendTurn() {
       throw new Error("provider start failed");
     },
+    async interruptTurn() {},
+    async respondToRequest() {},
+    hasSession() {
+      return false;
+    },
+    async stopAll() {},
+    onEvent() {
+      return () => {};
+    },
   };
+  const providerGateway = createProviderExecutionGateway(
+    provider,
+    createBlocksCostGate(costController),
+  );
   const execution = new AgentExecutionGateway(toolGateway, providerGateway);
 
   await assert.rejects(
@@ -200,8 +218,6 @@ test("provider start failure propagates after the execution gateway has authoriz
     /provider start failed/,
   );
 
-  // The provider gateway owns release/settlement after authorization; this
-  // test verifies that the orchestration layer does not invent a second hold.
   assert.equal(costController.getLedger().length, 0);
-  assert.ok(costController.remainingUsd("p1", "t1") < 20);
+  assert.equal(costController.remainingUsd("p1", "t1"), 20);
 });
