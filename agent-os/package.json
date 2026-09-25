@@ -6,7 +6,8 @@
   "description": "Agent OS zero-cost infrastructure: contracts, policy engine, cost controller, project/workspace distinction, tool gateway, mock provider, dry-run harness. No paid provider calls; no credentials.",
   "scripts": {
     "test": "tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:blocks-runtime": "tsx scripts/verify-blocks-runtime.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
