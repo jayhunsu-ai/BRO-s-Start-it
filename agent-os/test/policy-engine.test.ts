@@ -68,9 +68,9 @@ test("precedence: kill switch beats an otherwise budget-exceeding request too", 
 });
 
 test("createGatedOnAsk auto-answers ALLOW without invoking rawOnAsk", () => {
-  let answered: { id: string; behavior: string; message?: string } | null = null;
+  const answered: { value: { id: string; behavior: string; message?: string } | null } = { value: null };
   let rawCalled = false;
-  const broker = { answer: (id: string, behavior: "allow" | "deny" | "answer", message?: string) => { answered = { id, behavior, message }; } };
+  const broker = { answer: (id: string, behavior: "allow" | "deny" | "answer", message?: string) => { answered.value = { id, behavior, message }; } };
   const gated = createGatedOnAsk({
     engine: new PolicyEngine(),
     buildContext: () => baseCtx,
@@ -79,7 +79,8 @@ test("createGatedOnAsk auto-answers ALLOW without invoking rawOnAsk", () => {
     rawOnAsk: () => { rawCalled = true; },
   });
   gated({ id: "ask-1", tool: "write:file" });
-  assert.equal(answered?.behavior, "allow");
+  assert.ok(answered.value, "broker should have answered");
+  assert.equal(answered.value.behavior, "allow");
   assert.equal(rawCalled, false);
 });
 
@@ -98,9 +99,9 @@ test("createGatedOnAsk falls through to rawOnAsk for ESCALATE/REQUIRES_HUMAN", (
 });
 
 test("createGatedOnAsk auto-denies DENY without invoking rawOnAsk", () => {
-  let answered: { behavior: string; message?: string } | null = null;
+  const answered: { value: { behavior: string; message?: string } | null } = { value: null };
   let rawCalled = false;
-  const broker = { answer: (_id: string, behavior: "allow" | "deny" | "answer", message?: string) => { answered = { behavior, message }; } };
+  const broker = { answer: (_id: string, behavior: "allow" | "deny" | "answer", message?: string) => { answered.value = { behavior, message }; } };
   const gated = createGatedOnAsk({
     engine: new PolicyEngine(),
     buildContext: () => ({ ...baseCtx, aiExecutionEnabled: false }),
@@ -109,6 +110,7 @@ test("createGatedOnAsk auto-denies DENY without invoking rawOnAsk", () => {
     rawOnAsk: () => { rawCalled = true; },
   });
   gated({ id: "ask-3", tool: "write:file" });
-  assert.equal(answered?.behavior, "deny");
+  assert.ok(answered.value, "broker should have answered");
+  assert.equal(answered.value.behavior, "deny");
   assert.equal(rawCalled, false);
 });
