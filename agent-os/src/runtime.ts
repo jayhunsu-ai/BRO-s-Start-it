@@ -69,10 +69,3 @@ export function createAgentOSRuntime(options: AgentOSRuntimeOptions = {}) {
 
   return { controller, costGate, guard };
 }
-
-function controllerRemainingInvocationCap(controller: CostController): number {
-  // The controller itself enforces the configured invocation ceiling and all
-  // higher-level ceilings. Keep this value explicit so a future runtime can
-  // expose a configurable per-model cap without changing the gateway.
-  return Math.max(0, Math.min(5, controller.remainingUsd("__runtime__")));
-}
