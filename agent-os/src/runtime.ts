@@ -23,6 +23,7 @@ export interface GuardedProviderAdapter extends ProviderAdapter {
 }
 
 export function createAgentOSRuntime(options: AgentOSRuntimeOptions = {}) {
+  const invocationCapUsd = options.invocationBudgetUsd ?? 5;
   const controller = new CostController({
     globalMonthlyCeilingUsd: options.monthlyCeilingUsd ?? 500,
     projectBudgetUsd: {},
@@ -45,7 +46,7 @@ export function createAgentOSRuntime(options: AgentOSRuntimeOptions = {}) {
             taskId: input.taskId,
             provider: adapter.provider,
             model,
-            maxCostUsd: controllerRemainingInvocationCap(controller),
+            maxCostUsd: Math.max(0, Math.min(invocationCapUsd, controller.remainingUsd(input.projectId))),
           });
           if (!reservation) {
             throw new Error(`Agent OS denied provider execution: no budget available for ${adapter.provider}/${model}.`);
