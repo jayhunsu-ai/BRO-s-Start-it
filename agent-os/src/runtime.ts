@@ -13,6 +13,7 @@ export interface AgentOSRuntimeOptions {
   taskBudgetUsd?: number;
   invocationBudgetUsd?: number;
   retryOrChildWorkerBudgetUsd?: number;
+  zeroCostProviders?: string[];
 }
 
 export interface GuardedProviderAdapter extends ProviderAdapter {
@@ -24,6 +25,7 @@ export interface GuardedProviderAdapter extends ProviderAdapter {
 
 export function createAgentOSRuntime(options: AgentOSRuntimeOptions = {}) {
   const invocationCapUsd = options.invocationBudgetUsd ?? 5;
+  const zeroCostProviders = new Set(options.zeroCostProviders ?? ["ollama"]);
   const controller = new CostController({
     globalMonthlyCeilingUsd: options.monthlyCeilingUsd ?? 500,
     projectBudgetUsd: {},
@@ -41,6 +43,7 @@ export function createAgentOSRuntime(options: AgentOSRuntimeOptions = {}) {
         controller,
         async reserveAndSend(input: SendTurnInput & { projectId: string; taskId?: string }) {
           const model = input.model ?? "unknown";
+          if (zeroCostProviders.has(adapter.provider)) return adapter.sendTurn(input);
           const reservation = controller.reserveInvocation({
             projectId: input.projectId,
             taskId: input.taskId,
