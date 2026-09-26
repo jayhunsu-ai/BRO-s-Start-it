@@ -166,6 +166,39 @@ export class CostController {
     return reservation;
   }
 
+  /** Reserve a fixed invocation cap when token estimates or provider pricing are
+   * not yet available to the caller. This is a hard pre-call ceiling: the
+   * provider must not start unless the full cap fits every budget level. */
+  reserveInvocation(input: {
+    projectId: string;
+    taskId?: string;
+    provider: string;
+    model: string;
+    maxCostUsd: number;
+  }): CostReservation | null {
+    if (!this.aiExecutionEnabled) return null;
+    if (this.breaker.current === "HALTED") return null;
+    if (!Number.isFinite(input.maxCostUsd) || input.maxCostUsd <= 0) return null;
+
+    const remaining = this.remainingUsd(input.projectId, input.taskId);
+    const cap = Math.min(remaining, this.budgets.invocationBudgetUsd);
+    if (input.maxCostUsd > cap) return null;
+
+    const reservation: CostReservation = {
+      reservationId: `res-${crypto.randomUUID()}`,
+      projectId: input.projectId,
+      taskId: input.taskId,
+      estimatedUncachedInputTokens: 0,
+      estimatedCachedInputTokens: 0,
+      estimatedOutputTokens: 0,
+      pricingVersion: "invocation-cap-v1",
+      maxCostUsd: input.maxCostUsd,
+      createdAt: new Date().toISOString(),
+    };
+    this.reservations.set(reservation.reservationId, reservation);
+    return reservation;
+  }
+
   /** §4 step 7: reconcile a reservation against actual (simulated)
    * usage, and append to the spend ledger (§10). */
   commit(
