@@ -62,20 +62,24 @@ export function createProviderExecutionGateway(
         });
       };
 
-      // Subscribe before sendTurn because a provider may emit turn.completed
-      // synchronously/asynchronously before sendTurn resolves with the turn ID.
+      // Subscribe once before sendTurn. Keeping the same listener closes
+      // the race where a very fast provider completes between an
+      // unsubscribe() and replacement listener.
+      let providerTurnId: string | undefined;
       unsubscribe = adapter.onEvent((event) => {
-        if (event.type === "turn.completed") {
-          completions.push({
-            turnId: event.turnId,
-            ok: event.ok,
-            cost: event.cost,
-          });
+        if (event.type !== "turn.completed") return;
+        completions.push({ turnId: event.turnId, ok: event.ok, cost: event.cost });
+        if (providerTurnId && event.turnId === providerTurnId) {
+          void settleOnce(
+            event.ok ? "ok" : "error",
+            typeof event.cost === "number" ? event.cost : null,
+          );
         }
       });
 
       try {
         const result = await adapter.sendTurn(turnInput);
+        providerTurnId = result.turnId;
 
         const completed = completions.find((event) => event.turnId === result.turnId);
         if (completed) {
@@ -83,19 +87,7 @@ export function createProviderExecutionGateway(
             completed.ok ? "ok" : "error",
             typeof completed.cost === "number" ? completed.cost : null,
           );
-          return result;
         }
-
-        // The turn is still running. Replace the broad listener with a
-        // turn-specific listener so unrelated turns cannot settle this hold.
-        unsubscribe?.();
-        unsubscribe = adapter.onEvent((event) => {
-          if (event.turnId !== result.turnId || event.type !== "turn.completed") return;
-          void settleOnce(
-            event.ok ? "ok" : "error",
-            typeof event.cost === "number" ? event.cost : null,
-          );
-        });
 
         return result;
       } catch (error) {
