@@ -1,0 +1,25 @@
+name: Agent OS Zero-Cost Verification
+
+on:
+  push:
+    branches:
+      - codex/staging-environment
+  pull_request:
+    paths:
+      - "agent-os/**"
+      - ".github/workflows/agent-os-zero-cost.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-os
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm test
+      - run: npm run typecheck
