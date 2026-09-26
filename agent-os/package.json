@@ -7,11 +7,22 @@
   "scripts": {
     "test": "tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "verify:blocks-runtime": "tsx scripts/verify-blocks-runtime.ts"
+    "verify:blocks-runtime": "tsx scripts/verify-blocks-runtime.ts",
+    "build": "tsc",
+    "prepare": "tsc"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
-  }
+  },
+  "main": "./dist/src/index.js",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ]
 }
